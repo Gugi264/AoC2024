@@ -1,69 +1,50 @@
-pub fn part1(input: &str) -> i32 {
-    input
-        .lines()
-        .map(|line| {
-            let report: Vec<i32> = line
-                .split_whitespace()
-                .map(|word| word.parse().unwrap())
-                .collect::<Vec<i32>>();
-            if save_lvl(report) {
-                return 1;
-            } else {
-                return 0;
-            }
-        })
-        .sum()
-}
+use aoc_traits::AdventOfCodeDay;
 
-pub fn part2(input: &str) -> i32 {
-    input
-        .lines()
-        .map(|line| {
-            let report: Vec<i32> = line
-                .split_whitespace()
-                .map(|word| word.parse().unwrap())
-                .collect::<Vec<i32>>();
+#[derive(Default)]
+pub struct Solver;
+impl AdventOfCodeDay for Solver {
+    type ParsedInput<'a> = Vec<Vec<u32>>;
+    type Part1Output = usize;
+    type Part2Output = usize;
 
-            for i in 0..report.len() {
-                let mut new_report = report.clone();
-                new_report.remove(i);
-                if save_lvl(new_report) {
-                    return 1;
+    fn parse_input(input: &str) -> Self::ParsedInput<'_> {
+        input
+            .lines()
+            .map(|line| {
+                line.split_whitespace()
+                    .map(|word| word.parse().unwrap())
+                    .collect::<Vec<u32>>()
+            })
+            .collect()
+    }
+
+    fn solve_part1(input: &Self::ParsedInput<'_>) -> Self::Part1Output {
+        input.iter().filter(|x| save_lvl(x)).count()
+    }
+    fn solve_part2(input: &Self::ParsedInput<'_>) -> Self::Part2Output {
+        input
+            .iter()
+            .map(|report| {
+                for i in 0..report.len() {
+                    let mut new_report = report.clone();
+                    new_report.remove(i);
+                    if save_lvl(&new_report) {
+                        return 1;
+                    }
                 }
-            }
-            0
-        })
-        .sum()
+                0
+            })
+            .sum()
+    }
 }
 
-// fn check_wrong_index(input: Vec<i32>) -> i32 {
-//
-//     let mut ascending = false;
-//     let mut descending = false;
-//     for i in 0..input.len() - 1 {
-//         let diff = input[i] - input[i + 1];
-//         match diff {
-//             x if x >= 1 && x <= 3 => { descending = true;
-//                 if ascending {return i.try_into().unwrap()};
-//             }
-//             x if x <= -1 && x >= -3 => {ascending = true;
-// if descending {return i.try_into().unwrap();}},
-//             0 => {return i.try_into().unwrap()},
-//             x if x > 0 => {if descending = fa}
-//
-//             _ => {
-//                 return i;
-//             }
-//         }
-//     }
-//         return 99;
-// }
-
-fn save_lvl(input: Vec<i32>) -> bool {
+fn save_lvl(input: &Vec<u32>) -> bool {
     let mut ascending = false;
     let mut descending = false;
     for i in 0..input.len() - 1 {
-        let diff = input[i] - input[i + 1];
+        let this: i32 = input[i].try_into().unwrap();
+        let next: i32 = input[i + 1].try_into().unwrap();
+        let diff: i32 = this - next;
         match diff {
             x if x >= 1 && x <= 3 => descending = true,
             x if x <= -1 && x >= -3 => ascending = true,
@@ -87,24 +68,28 @@ mod tests {
     #[test]
     fn test_part1() {
         let file_content = fs::read_to_string("src/test_puzzle.txt").expect("unable to read file");
-        assert_eq!(part1(&file_content), 2);
+        let input = Solver::parse_input(&file_content);
+        assert_eq!(Solver::solve_part1(&input), 2);
     }
 
     #[test]
     fn test_part2() {
         let file_content = fs::read_to_string("src/test_puzzle.txt").expect("unable to read file");
-        assert_eq!(part2(&file_content), 4);
+        let input = Solver::parse_input(&file_content);
+        assert_eq!(Solver::solve_part2(&input), 4);
     }
 
     #[test]
     fn solve_part1() {
         let file_content = fs::read_to_string("src/puzzle.txt").expect("unable to read file");
-        assert_eq!(part1(&file_content), 559);
+        let input = Solver::parse_input(&file_content);
+        assert_eq!(Solver::solve_part1(&input), 559);
     }
 
     #[test]
     fn solve_part2() {
         let file_content = fs::read_to_string("src/puzzle.txt").expect("unable to read file");
-        assert_eq!(part2(&file_content), 601);
+        let input = Solver::parse_input(&file_content);
+        assert_eq!(Solver::solve_part2(&input), 601);
     }
 }
