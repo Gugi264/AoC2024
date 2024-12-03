@@ -53,7 +53,7 @@ fn save_lvl(input: &Vec<u32>) -> bool {
             }
         }
     }
-    return ascending || descending;
+    return ascending != descending;
 }
 
 #[cfg(test)]
