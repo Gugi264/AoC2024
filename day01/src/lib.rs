@@ -1,7 +1,4 @@
-use std::{
-    collections::{BTreeMap, HashMap},
-    iter::zip,
-};
+use std::{collections::HashMap, iter::zip};
 
 use aoc_traits::AdventOfCodeDay;
 
@@ -33,8 +30,8 @@ impl AdventOfCodeDay for Solver {
     }
 
     fn solve_part2((left_input, right_input): &Self::ParsedInput<'_>) -> Self::Part2Output {
-        let mut left_side = BTreeMap::new();
-        let mut right_side = BTreeMap::new();
+        let mut left_side = HashMap::new();
+        let mut right_side = HashMap::new();
 
         zip(left_input, right_input).for_each(|(left, right)| {
             left_side.entry(left).and_modify(|x| *x += 1).or_insert(1);
