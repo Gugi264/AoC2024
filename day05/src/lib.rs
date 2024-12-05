@@ -54,15 +54,16 @@ impl AdventOfCodeDay for Solver {
             .pages
             .iter()
             .filter_map(|x| {
-                let mut dissallowed = Vec::new();
-                let good = x.iter().all(|p| {
-                    dissallowed.extend(input.rules[*p].clone());
-                    !dissallowed.contains(p)
-                });
+                // let good = x.iter().all(|p| {
+                //     dissallowed.extend(input.rules[*p].clone());
+                //     !dissallowed.contains(p)
+                // });
+
+                let good = good_array(input, x).0;
 
                 if good {
-                    dbg!(&x);
-                    dbg!(x[x.len() / 2]);
+                    // dbg!(&x);
+                    // dbg!(x[x.len() / 2]);
                     Some(x[x.len() / 2])
                 } else {
                     None
@@ -76,22 +77,39 @@ impl AdventOfCodeDay for Solver {
             .pages
             .iter()
             .filter_map(|x| {
-                let mut dissallowed = Vec::new();
-                let good = x.iter().all(|p| {
-                    dissallowed.extend(input.rules[*p].clone());
-                    !dissallowed.contains(p)
-                });
-
+                let (mut good, mut index) = good_array(input, x);
                 if good {
-                    dbg!(&x);
-                    dbg!(x[x.len() / 2]);
-                    Some(x[x.len() / 2])
-                } else {
-                    None
+                    return None;
                 }
+                let mut new_x = x.clone();
+                while !good {
+                    let tmp = new_x[index - 1];
+                    new_x[index - 1] = new_x[index];
+                    new_x[index] = tmp;
+                    (good, index) = good_array(input, &new_x);
+                }
+
+                Some(new_x[x.len() / 2])
             })
             .sum()
     }
+}
+
+pub fn good_array(input: &INPUTS, current_line: &Vec<usize>) -> (bool, usize) {
+    let mut dissallowed = Vec::new();
+    let mut wrong_index = 0;
+    current_line.iter().enumerate().all(|(index, p)| {
+        dissallowed.extend(input.rules[*p].clone());
+        if dissallowed.contains(p) {
+            wrong_index = index;
+            return false;
+        }
+        true
+    });
+    if wrong_index != 0 {
+        return (false, wrong_index);
+    }
+    return (true, 0);
 }
 
 #[cfg(test)]
@@ -120,10 +138,10 @@ mod tests {
         assert_eq!(Solver::solve_part2(&input), 123);
     }
 
-    // #[test]
-    // fn solve_part2() {
-    //     let file_content = fs::read_to_string("src/puzzle.txt").expect("unable to read file");
-    //     let input = Solver::parse_input(&file_content);
-    //     assert_eq!(Solver::solve_part2(&input), 1965);
-    // }
+    #[test]
+    fn solve_part2() {
+        let file_content = fs::read_to_string("src/puzzle.txt").expect("unable to read file");
+        let input = Solver::parse_input(&file_content);
+        assert_eq!(Solver::solve_part2(&input), 6319);
+    }
 }
