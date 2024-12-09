@@ -48,27 +48,7 @@ impl AdventOfCodeDay for Solver {
         input
             .iter()
             .filter_map(|x| {
-                let combinations =
-                    repeat_n(ops.iter(), x.inputs.len() - 1).multi_cartesian_product();
-                let found = combinations.into_iter().find(|ops_vec| {
-                    let mut tmp_result = x.inputs[0];
-                    ops_vec.iter().enumerate().for_each(|(i, ops)| {
-                        match ops {
-                            Operators::ADD => tmp_result += x.inputs[i + 1],
-                            Operators::MUL => tmp_result *= x.inputs[i + 1],
-                            Operators::CONCAT => {}
-                        }
-                        // if tmp_result > x.result {
-                        //     cont
-                        // }
-                    });
-                    if tmp_result == x.result {
-                        true
-                    } else {
-                        false
-                    }
-                });
-                if found.is_some() {
+                if search_line_result(x.result, &x.inputs[1..], x.inputs[0], &ops) {
                     Some(x.result)
                 } else {
                     None
@@ -82,35 +62,46 @@ impl AdventOfCodeDay for Solver {
         input
             .iter()
             .filter_map(|x| {
-                let combinations =
-                    repeat_n(ops.iter(), x.inputs.len() - 1).multi_cartesian_product();
-                let found = combinations.into_iter().find(|ops_vec| {
-                    let mut tmp_result = x.inputs[0];
-                    ops_vec.iter().enumerate().for_each(|(i, ops)| {
-                        match ops {
-                            Operators::ADD => tmp_result += x.inputs[i + 1],
-                            Operators::MUL => tmp_result *= x.inputs[i + 1],
-                            Operators::CONCAT => {
-                                tmp_result = concat_nr(tmp_result, x.inputs[i + 1]);
-                            }
-                        }
-                        // if tmp_result > x.result {
-                        //     cont
-                        // }
-                    });
-                    if tmp_result == x.result {
-                        true
-                    } else {
-                        false
-                    }
-                });
-                if found.is_some() {
+                if search_line_result(x.result, &x.inputs[1..], x.inputs[0], &ops) {
                     Some(x.result)
                 } else {
                     None
                 }
             })
             .sum()
+    }
+}
+
+pub fn search_line_result(
+    result: usize,
+    numbers: &[usize],
+    current: usize,
+    operators: &[Operators],
+) -> bool {
+    // dbg!(&numbers);
+    if numbers.len() == 0 {
+        return result == current;
+    }
+    operators
+        .iter()
+        .find(|x| {
+            let tmp = calculate(current, numbers[0], x);
+            // dbg!(current);
+            // dbg!(&x);
+            // dbg!(&tmp);
+            if tmp > result {
+                return false;
+            }
+            search_line_result(result, &numbers[1..], tmp, operators)
+        })
+        .is_some()
+}
+
+pub fn calculate(a: usize, b: usize, operation: &Operators) -> usize {
+    match operation {
+        Operators::ADD => a + b,
+        Operators::MUL => a * b,
+        Operators::CONCAT => concat_nr(a, b),
     }
 }
 
