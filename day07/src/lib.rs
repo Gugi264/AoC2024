@@ -1,8 +1,6 @@
 use aoc_traits::AdventOfCodeDay;
-use itertools::concat;
 use itertools::repeat_n;
 use itertools::Itertools;
-use std::iter;
 use std::usize;
 
 #[derive(Debug)]
@@ -159,6 +157,6 @@ mod tests {
     fn solve_part2() {
         let file_content = fs::read_to_string("src/puzzle.txt").expect("unable to read file");
         let input = Solver::parse_input(&file_content);
-        assert_eq!(Solver::solve_part2(&input), 1523);
+        assert_eq!(Solver::solve_part2(&input), 438027111276610);
     }
 }

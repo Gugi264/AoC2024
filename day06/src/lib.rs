@@ -1,4 +1,4 @@
-use std::collections::{HashSet};
+use std::collections::{HashMap, HashSet};
 
 use aoc_traits::AdventOfCodeDay;
 
@@ -53,94 +53,170 @@ impl AdventOfCodeDay for Solver {
     }
 
     fn solve_part1(input: &Self::ParsedInput<'_>) -> Self::Part1Output {
-        let mut direction = DIRECTION::UP;
-        let mut current_pos = input.start_pos;
-        let mut visited_pos = HashSet::new();
-        visited_pos.insert(current_pos);
-        loop {
-            match direction {
-                DIRECTION::UP => {
-                    let Some(&(mut new_row)) = input.col_obj[current_pos.1]
-                        .iter()
-                        .rev()
-                        .find(|&&x| x < current_pos.0)
-                    else {
-                        for i in 0..current_pos.0 {
-                            visited_pos.insert((i, current_pos.1));
-                        }
-                        break;
-                    };
-                    new_row += 1;
-                    for i in new_row..current_pos.0 {
-                        visited_pos.insert((i, current_pos.1));
-                    }
-                    current_pos = (new_row, current_pos.1);
-                    direction = DIRECTION::RIGHT;
-                }
-                DIRECTION::DOWN => {
-                    let Some(&(mut new_row)) = input.col_obj[current_pos.1]
-                        .iter()
-                        .find(|&&x| x > current_pos.0)
-                    else {
-                        for i in current_pos.0..input.row_obj.len() {
-                            visited_pos.insert((i, current_pos.1));
-                        }
-                        break;
-                    };
-                    new_row -= 1;
-                    for i in current_pos.0..new_row {
-                        visited_pos.insert((i, current_pos.1));
-                    }
-                    current_pos = (new_row, current_pos.1);
-                    direction = DIRECTION::LEFT;
-                }
-                DIRECTION::RIGHT => {
-                    let Some(&(mut new_col)) = input.row_obj[current_pos.0]
-                        .iter()
-                        .find(|&&x| x > current_pos.1)
-                    else {
-                        for i in current_pos.1..input.col_obj.len() + 1 {
-                            visited_pos.insert((current_pos.0, i));
-                        }
-                        break;
-                    };
-                    new_col -= 1;
-                    for i in current_pos.1..new_col + 1 {
-                        visited_pos.insert((current_pos.0, i));
-                    }
-                    current_pos = (current_pos.0, new_col);
-                    direction = DIRECTION::DOWN;
-                }
-                DIRECTION::LEFT => {
-                    let Some(&(mut new_col)) = input.row_obj[current_pos.0]
-                        .iter()
-                        .rev()
-                        .find(|&&x| x < current_pos.1)
-                    else {
-                        for i in 0..current_pos.1 + 1 {
-                            visited_pos.insert((current_pos.0, i));
-                        }
-                        break;
-                    };
-                    new_col += 1;
-                    for i in new_col..current_pos.1 + 1 {
-                        visited_pos.insert((current_pos.0, i));
-                    }
-                    current_pos = (current_pos.0, new_col);
-                    direction = DIRECTION::UP;
-                }
-            }
-        }
+        let visited_pos = walk(input).unwrap();
         visited_pos.len()
     }
 
     fn solve_part2(input: &Self::ParsedInput<'_>) -> Self::Part2Output {
-        todo!()
+        let visited_pos = walk(input).unwrap();
+        let mut obstacles = HashSet::new();
+        visited_pos.keys().for_each(|pos| {
+            let mut new_rows = input.row_obj.clone();
+            let mut new_cols = input.col_obj.clone();
+            new_rows[pos.0].push(pos.1);
+            new_cols[pos.1].push(pos.0);
+            new_rows[pos.0].sort_unstable();
+            new_cols[pos.1].sort_unstable();
+            let new_map = MAP {
+                start_pos: input.start_pos,
+                row_obj: new_rows,
+                col_obj: new_cols,
+            };
+            let res = walk(&new_map);
+            if res.is_none() {
+                obstacles.insert(pos);
+            }
+        });
+        obstacles.len()
     }
 }
 
-pub fn walk(input: MAP, position: (usize, usize), direction: DIRECTION) -> {
-            
+pub fn walk(input: &MAP) -> Option<HashMap<(usize, usize), Vec<DIRECTION>>> {
+    let mut direction = DIRECTION::UP;
+    let mut current_pos = input.start_pos;
+    let mut visited_pos = HashMap::new();
+    visited_pos.insert(current_pos, vec![DIRECTION::UP]);
+    loop {
+        match direction {
+            DIRECTION::UP => {
+                let Some(&(mut new_row)) = input.col_obj[current_pos.1]
+                    .iter()
+                    .rev()
+                    .find(|&&x| x < current_pos.0)
+                else {
+                    for i in 0..current_pos.0 {
+                        visited_pos
+                            .entry((i, current_pos.1))
+                            .and_modify(|x| x.push(DIRECTION::UP))
+                            .or_insert(vec![DIRECTION::UP]);
+                    }
+                    break;
+                };
+                new_row += 1;
+                for i in new_row..current_pos.0 {
+                    let entry = visited_pos.get(&(i, current_pos.1));
+                    if let Some(x) = &entry {
+                        if x.contains(&DIRECTION::UP) {
+                            return None;
+                        } else {
+                            visited_pos
+                                .entry((i, current_pos.1))
+                                .and_modify(|x| x.push(DIRECTION::UP));
+                        }
+                    } else {
+                        visited_pos.insert((i, current_pos.1), vec![DIRECTION::UP]);
+                    }
+                }
+                current_pos = (new_row, current_pos.1);
+                direction = DIRECTION::RIGHT;
+            }
+            DIRECTION::DOWN => {
+                let Some(&(mut new_row)) = input.col_obj[current_pos.1]
+                    .iter()
+                    .find(|&&x| x > current_pos.0)
+                else {
+                    for i in current_pos.0..input.row_obj.len() {
+                        visited_pos
+                            .entry((i, current_pos.1))
+                            .and_modify(|x| x.push(DIRECTION::DOWN))
+                            .or_insert(vec![DIRECTION::DOWN]);
+                    }
+                    break;
+                };
+                new_row -= 1;
+                for i in current_pos.0..new_row {
+                    let entry = visited_pos.get(&(i, current_pos.1));
+                    if let Some(x) = &entry {
+                        if x.contains(&DIRECTION::DOWN) {
+                            return None;
+                        } else {
+                            visited_pos
+                                .entry((i, current_pos.1))
+                                .and_modify(|x| x.push(DIRECTION::DOWN));
+                        }
+                    } else {
+                        visited_pos.insert((i, current_pos.1), vec![DIRECTION::DOWN]);
+                    }
+                }
+                current_pos = (new_row, current_pos.1);
+                direction = DIRECTION::LEFT;
+            }
+            DIRECTION::RIGHT => {
+                let Some(&(mut new_col)) = input.row_obj[current_pos.0]
+                    .iter()
+                    .find(|&&x| x > current_pos.1)
+                else {
+                    for i in current_pos.1..input.col_obj.len() + 1 {
+                        visited_pos
+                            .entry((current_pos.0, i))
+                            .and_modify(|x| x.push(DIRECTION::RIGHT))
+                            .or_insert(vec![DIRECTION::RIGHT]);
+                    }
+                    break;
+                };
+                new_col -= 1;
+                for i in current_pos.1..new_col + 1 {
+                    let entry = visited_pos.get(&(current_pos.0, i));
+                    if let Some(x) = &entry {
+                        if x.contains(&DIRECTION::RIGHT) {
+                            return None;
+                        } else {
+                            visited_pos
+                                .entry((current_pos.0, i))
+                                .and_modify(|x| x.push(DIRECTION::RIGHT));
+                        }
+                    } else {
+                        visited_pos.insert((current_pos.0, i), vec![DIRECTION::RIGHT]);
+                    }
+                }
+                current_pos = (current_pos.0, new_col);
+                direction = DIRECTION::DOWN;
+            }
+            DIRECTION::LEFT => {
+                let Some(&(mut new_col)) = input.row_obj[current_pos.0]
+                    .iter()
+                    .rev()
+                    .find(|&&x| x < current_pos.1)
+                else {
+                    for i in 0..current_pos.1 + 1 {
+                        visited_pos
+                            .entry((current_pos.0, i))
+                            .and_modify(|x| x.push(DIRECTION::LEFT))
+                            .or_insert(vec![DIRECTION::LEFT]);
+                    }
+                    break;
+                };
+                new_col += 1;
+                for i in new_col..current_pos.1 + 1 {
+                    let entry = visited_pos.get(&(current_pos.0, i));
+                    if let Some(x) = &entry {
+                        if x.contains(&DIRECTION::LEFT) {
+                            return None;
+                        } else {
+                            visited_pos
+                                .entry((current_pos.0, i))
+                                .and_modify(|x| x.push(DIRECTION::LEFT));
+                        }
+                    } else {
+                        visited_pos.insert((current_pos.0, i), vec![DIRECTION::LEFT]);
+                    }
+                }
+                current_pos = (current_pos.0, new_col);
+                direction = DIRECTION::UP;
+            }
+        }
+    }
+    Some(visited_pos)
 }
 
 #[cfg(test)]
@@ -162,17 +238,17 @@ mod tests {
         assert_eq!(Solver::solve_part1(&input), 5145);
     }
 
-    // #[test]
-    // fn test_part2() {
-    //     let file_content = fs::read_to_string("src/test_puzzle.txt").expect("unable to read file");
-    //     let input = Solver::parse_input(&file_content);
-    //     assert_eq!(Solver::solve_part2(&input), 6);
-    // }
-    //
-    // #[test]
-    // fn solve_part2() {
-    //     let file_content = fs::read_to_string("src/puzzle.txt").expect("unable to read file");
-    //     let input = Solver::parse_input(&file_content);
-    //     assert_eq!(Solver::solve_part2(&input), 1523);
-    // }
+    #[test]
+    fn test_part2() {
+        let file_content = fs::read_to_string("src/test_puzzle.txt").expect("unable to read file");
+        let input = Solver::parse_input(&file_content);
+        assert_eq!(Solver::solve_part2(&input), 6);
+    }
+
+    #[test]
+    fn solve_part2() {
+        let file_content = fs::read_to_string("src/puzzle.txt").expect("unable to read file");
+        let input = Solver::parse_input(&file_content);
+        assert_eq!(Solver::solve_part2(&input), 1523);
+    }
 }
