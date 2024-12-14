@@ -1,6 +1,4 @@
 use aoc_traits::AdventOfCodeDay;
-use itertools::repeat_n;
-use itertools::Itertools;
 use std::usize;
 
 #[derive(Debug)]

@@ -5,7 +5,6 @@ edition = "2021"
 
 [dependencies]
 aoc-traits = { workspace = true }
-itertools = "0.13.0"
 
 
 [dev-dependencies]
