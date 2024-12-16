@@ -43,7 +43,7 @@ impl AdventOfCodeDay for Solver {
         let mut antinodes = HashSet::new();
         input.nodes.values().for_each(|val| {
             val.iter().combinations(2).for_each(|combi| {
-                combi.iter().tuple_windows().for_each(|(first, second)| {
+                combi.iter().tuples().for_each(|(first, second)| {
                     let row_diff = first.0 as i32 - second.0 as i32;
                     let col_diff = first.1 as i32 - second.1 as i32;
 
@@ -73,7 +73,7 @@ impl AdventOfCodeDay for Solver {
         let mut antinodes = HashSet::new();
         input.nodes.values().for_each(|val| {
             val.iter().combinations(2).for_each(|combi| {
-                combi.iter().tuple_windows().for_each(|(first, second)| {
+                combi.iter().tuples().for_each(|(first, second)| {
                     let row_diff = first.0 as i32 - second.0 as i32;
                     let col_diff = first.1 as i32 - second.1 as i32;
                     antinodes.insert((first.0 as i32, first.1 as i32));
