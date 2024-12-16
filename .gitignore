@@ -23,4 +23,3 @@ Cargo.lock
 # Dont push puzzle inputs
 *.txt
 
-benches/
