@@ -1,4 +1,4 @@
-use std::{usize, vec};
+use std::usize;
 
 use aoc_traits::AdventOfCodeDay;
 use itertools::Itertools;
