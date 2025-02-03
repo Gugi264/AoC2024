@@ -1,12 +1,14 @@
+use std::collections::HashMap;
+
 use aoc_traits::AdventOfCodeDay;
-use memoize::memoize;
+type Cache = HashMap<(u64, u16), u64>;
 
 #[derive(Default)]
 pub struct Solver;
 impl AdventOfCodeDay for Solver {
-    type ParsedInput<'a> = Vec<usize>;
-    type Part1Output = usize;
-    type Part2Output = usize;
+    type ParsedInput<'a> = Vec<u64>;
+    type Part1Output = u64;
+    type Part2Output = u64;
 
     fn parse_input(input: &str) -> Self::ParsedInput<'_> {
         input
@@ -16,84 +18,58 @@ impl AdventOfCodeDay for Solver {
     }
 
     fn solve_part1(input: &Self::ParsedInput<'_>) -> Self::Part1Output {
-        blink_n_times_new(input, 25)
+        blink_n_times(input, 25)
     }
 
     fn solve_part2(input: &Self::ParsedInput<'_>) -> Self::Part2Output {
-        blink_n_times_new(input, 75)
+        blink_n_times(input, 75)
     }
 }
 
-pub fn blink_n_times(input_stones: &Vec<usize>, blinks: usize) -> usize {
-    let mut stones = Vec::with_capacity(250_000);
-    stones.extend(input_stones);
-    for blink in 0..blinks {
-        println!("blinked {} times", blink);
-        for i in 0..stones.len() {
-            match stones[i] {
-                0 => stones[i] = 1,
-                x if count_digits(x) % 2 == 0 => {
-                    let (left, right) = split_in_two(stones[i]);
-                    stones[i] = left;
-                    stones.push(right);
-                }
-                _ => stones[i] = stones[i] * 2024,
-            }
-        }
-    }
-    dbg!(stones.len());
-    stones.len()
-}
-
-pub fn blink_n_times_new(input_stones: &[usize], blinks: usize) -> usize {
-    // println!("blinking left: {}", blinks);
-    if blinks == 0 {
-        return input_stones.len();
-    }
-    input_stones
+pub fn blink_n_times(stones: &Vec<u64>, blinks: u16) -> u64 {
+    let mut cache: Cache = HashMap::new();
+    stones
         .iter()
-        .map(|start_stone| {
-            let mut result = 0;
-            // println!(
-            //     "stone: {}/{}; blink: {}/{}",
-            //     stone_counter,
-            //     input_stones.len(),
-            //     blink,
-            //     blinks
-            // );
-            match start_stone {
-                0 => result += blink_n_times_new(&[1], blinks - 1),
-                x if count_digits(*x) % 2 == 0 => {
-                    let (left, right) = split_in_two(*start_stone);
-                    result += blink_n_times_new(&[left, right], blinks - 1)
-                }
-                _ => result += blink_n_times_new(&[start_stone * 2024], blinks - 1),
-            }
-            result
-        })
+        .map(|stone| blink_rec(*stone, blinks, &mut cache))
         .sum()
 }
 
-// #[memoize]
-pub fn split_in_two(input: usize) -> (usize, usize) {
-    let stringisze = input.to_string();
-    let (left, right) = stringisze.split_at(stringisze.len() / 2);
-    (left.parse().unwrap(), right.parse().unwrap())
+pub fn blink_rec(stone: u64, blinks_left: u16, cache: &mut Cache) -> u64 {
+    if let Some(x) = cache.get(&(stone, blinks_left)) {
+        return *x;
+    } else {
+        if blinks_left == 0 {
+            return 1;
+        }
+
+        let new_stones = blink_once(stone);
+        new_stones
+            .iter()
+            .map(|new_stone| {
+                let tmp_res = blink_rec(*new_stone, blinks_left - 1, cache);
+                cache.insert((*new_stone, blinks_left - 1), tmp_res);
+                tmp_res
+            })
+            .sum()
+    }
 }
 
-// #[memoize]
-pub fn count_digits(input: usize) -> usize {
-    if input == 0 {
-        return 1;
+pub fn blink_once(input_stone: u64) -> Vec<u64> {
+    let nr_digits = count_digits(input_stone);
+    match input_stone {
+        0 => vec![1],
+        _ if nr_digits % 2 == 0 => {
+            let raised = 10_u64.pow(nr_digits / 2);
+            let left = input_stone / raised;
+            let right = input_stone % raised;
+            vec![left, right]
+        }
+        _ => vec![input_stone * 2024],
     }
+}
 
-    let mut n = input;
-    let mut cnt = 0;
-    while n != 0 {
-        n = n / 10;
-        cnt += 1;
-    }
-    cnt
+pub fn count_digits(input: u64) -> u32 {
+    input.checked_ilog10().unwrap_or_default() + 1
 }
 
 #[cfg(test)]
@@ -114,17 +90,18 @@ mod tests {
         let input = Solver::parse_input(&file_content);
         assert_eq!(Solver::solve_part1(&input), 204022);
     }
-    // #[test]
-    // fn test_part2() {
-    //     let file_content = fs::read_to_string("src/test_puzzle.txt").expect("unable to read file");
-    //     let input = Solver::parse_input(&file_content);
-    //     assert_eq!(Solver::solve_part2(&input), 81);
-    // }
+
+    #[test]
+    fn test_part2() {
+        let file_content = fs::read_to_string("src/test_puzzle.txt").expect("unable to read file");
+        let input = Solver::parse_input(&file_content);
+        assert_eq!(Solver::solve_part2(&input), 65601038650482);
+    }
 
     #[test]
     fn solve_part2() {
         let file_content = fs::read_to_string("src/puzzle.txt").expect("unable to read file");
         let input = Solver::parse_input(&file_content);
-        assert_eq!(Solver::solve_part2(&input), 1116);
+        assert_eq!(Solver::solve_part2(&input), 241651071960597);
     }
 }

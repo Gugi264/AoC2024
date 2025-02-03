@@ -5,7 +5,6 @@ edition = "2021"
 
 [dependencies]
 aoc-traits = { workspace = true }
-memoize = "0.4.2"
 
 
 [dev-dependencies]
